@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mega Stack</title>
+  <link rel="icon" type="image/png" href="favicon.png">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -177,7 +178,43 @@
 
     saveBtn.addEventListener('click', () => {
       answers[current] = boxEl.value;
-      syncVarsByIndex(current, boxEl.value);
+      const date = new Date().toISOString().split('T')[0];
+
+      let content = `MEGA STACK
+
+Title: ${answers[0] || 'Untitled'}
+Date: ${date}
+
+------------------------------
+
+`;
+
+      questions.forEach((q, i) => {
+        const filled = q
+          .replace(/{{trigger}}/g, answers[2] || '[trigger]')
+          .replace(/{{originalStory}}/g, answers[9] || '[original story]')
+          .replace(/{{meVersion}}/g, answers[21] || '[me version]')
+          .replace(/{{oppositeVersion}}/g, answers[24] || '[opposite version]')
+          .replace(/{{desiredVersion}}/g, answers[27] || '[desired version]')
+          .replace(/{{whatYouWant}}/g, answers[16] || '[what you want]');
+
+        content += `${i + 1}. ${filled}
+
+${answers[i] || ''}
+
+------------------------------
+
+`;
+      });
+
+      const blob = new Blob([content], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mega_stack_${date}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'pt', format: 'letter' });
 
