@@ -110,6 +110,7 @@
 
     let current = 0;
     const answers = Array(questions.length).fill('');
+
     const vars = {
       stackTitle: '',
       core4: '',
@@ -142,9 +143,8 @@
     const backBtn = document.getElementById('back-btn');
     const saveBtn = document.getElementById('save-btn');
 
-    function renderQuestion() {
-      const raw = questions[current];
-      const q = raw
+    function fillTemplate(raw) {
+      return raw
         .replace(/{{person}}/g, vars.person || '[person]')
         .replace(/{{triggerDesc}}/g, vars.triggerDesc || '[trigger description]')
         .replace(/{{feelings}}/g, vars.feelings || '[feelings]')
@@ -153,126 +153,107 @@
         .replace(/{{meVersion}}/g, vars.meVersion || '[me version]')
         .replace(/{{oppositeVersion}}/g, vars.oppositeVersion || '[opposite version]')
         .replace(/{{desiredVersion}}/g, vars.desiredVersion || '[desired version]');
+    }
 
-      labelEl.textContent = `Q${current+1}/${questions.length}: ${q}`;
+    function renderQuestion() {
+      const q = fillTemplate(questions[current]);
+      labelEl.textContent = `Q${current + 1}/${questions.length}: ${q}`;
       boxEl.value = answers[current];
-      boxEl.style.display = 'block';
       boxEl.focus();
       backBtn.disabled = current === 0;
       nextBtn.disabled = current === questions.length - 1;
     }
 
-    nextBtn.addEventListener('click', () => {
+    function persistCurrentAnswer() {
       answers[current] = boxEl.value;
       syncVarsByIndex(current, boxEl.value);
+    }
+
+    nextBtn.addEventListener('click', () => {
+      persistCurrentAnswer();
       if (current < questions.length - 1) current++;
       renderQuestion();
     });
 
     backBtn.addEventListener('click', () => {
-      answers[current] = boxEl.value;
-      syncVarsByIndex(current, boxEl.value);
+      persistCurrentAnswer();
       if (current > 0) current--;
       renderQuestion();
     });
 
     saveBtn.addEventListener('click', () => {
-      answers[current] = boxEl.value;
-      const date = new Date().toISOString().split('T')[0];
+      persistCurrentAnswer();
 
-      let content = `MEGA STACK
-
-Title: ${answers[0] || 'Untitled'}
-Date: ${date}
-
-------------------------------
-
-`;
-
-      questions.forEach((q, i) => {
-        const filled = q
-          .replace(/{{trigger}}/g, answers[2] || '[trigger]')
-          .replace(/{{originalStory}}/g, answers[9] || '[original story]')
-          .replace(/{{meVersion}}/g, answers[21] || '[me version]')
-          .replace(/{{oppositeVersion}}/g, answers[24] || '[opposite version]')
-          .replace(/{{desiredVersion}}/g, answers[27] || '[desired version]')
-          .replace(/{{whatYouWant}}/g, answers[16] || '[what you want]');
-
-        content += `${i + 1}. ${filled}
-
-${answers[i] || ''}
-
-------------------------------
-
-`;
-      });
-
-      const blob = new Blob([content], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `mega_stack_${date}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: 'pt', format: 'letter' });
 
-      const marginX = 40;
-      let y = 50;
+      const marginX = 48;
+      const pageBottom = 760;
+      const contentWidth = 520;
       const lineHeight = 16;
 
-      const title = vars.stackTitle || 'Untitled';
+      const title = (vars.stackTitle || 'Untitled').trim();
       const date = new Date().toISOString().split('T')[0];
 
+      // Page 1 (cover)
+      let y = 64;
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(18);
+      doc.setFontSize(22);
       doc.text('Mega Stack', marginX, y);
-      y += 24;
+      y += 28;
 
-      doc.setFontSize(11);
-      doc.text(`Title: ${title}   |   Date: ${date}`, marginX, y);
-      y += 20;
+      doc.setFontSize(12);
+      doc.text(`Title: ${title}`, marginX, y);
+      y += 18;
+      doc.text(`Date: ${date}`, marginX, y);
+      y += 18;
+
+      if (vars.core4) {
+        doc.text(`CORE 4: ${vars.core4}`, marginX, y);
+        y += 18;
+      }
+      if (vars.person) {
+        doc.text(`Person: ${vars.person}`, marginX, y);
+        y += 18;
+      }
 
       doc.setDrawColor(0);
-      doc.line(marginX, y, 570, y);
-      y += 20;
+      doc.line(marginX, y, marginX + contentWidth, y);
 
-      doc.setFontSize(11);
+      // Start Q&A on Page 2
+      doc.addPage();
+      y = 64;
 
-      questions.forEach((q, i) => {
-        const filled = q
-          .replace(/{{person}}/g, vars.person || '[person]')
-          .replace(/{{triggerDesc}}/g, vars.triggerDesc || '[trigger description]')
-          .replace(/{{feelings}}/g, vars.feelings || '[feelings]')
-          .replace(/{{originalStory}}/g, vars.originalStory || '[original story]')
-          .replace(/{{whatYouWant}}/g, vars.whatYouWant || '[what you want]')
-          .replace(/{{meVersion}}/g, vars.meVersion || '[me version]')
-          .replace(/{{oppositeVersion}}/g, vars.oppositeVersion || '[opposite version]')
-          .replace(/{{desiredVersion}}/g, vars.desiredVersion || '[desired version]');
+      questions.forEach((rawQ, i) => {
+        const filledQ = fillTemplate(rawQ);
 
         doc.setFont('Helvetica', 'bold');
-        const qLines = doc.splitTextToSize(`${i + 1}. ${filled}`, 500);
+        doc.setFontSize(12);
+        const qLines = doc.splitTextToSize(`${i + 1}. ${filledQ}`, contentWidth);
         qLines.forEach(line => {
-          if (y > 750) { doc.addPage(); y = 50; }
+          if (y > pageBottom) { doc.addPage(); y = 64; }
           doc.text(line, marginX, y);
           y += lineHeight;
         });
 
-        y += 4;
+        y += 6;
         doc.setFont('Helvetica', 'normal');
-        const aText = answers[i] || '';
-        const aLines = doc.splitTextToSize(aText, 500);
+        doc.setFontSize(11);
+        const aText = (answers[i] || '').toString();
+        const aLines = doc.splitTextToSize(aText, contentWidth);
+
+        if (aLines.length === 0) aLines.push('');
+
         aLines.forEach(line => {
-          if (y > 750) { doc.addPage(); y = 50; }
+          if (y > pageBottom) { doc.addPage(); y = 64; }
           doc.text(line, marginX, y);
           y += lineHeight;
         });
 
-        y += 16;
+        y += 14;
       });
 
-      const safeTitle = title.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 50);
+      const safeTitle = title.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 50) || 'Untitled';
       doc.save(`mega_stack_${safeTitle}_${date}.pdf`);
     });
 
@@ -292,8 +273,6 @@ ${answers[i] || ''}
       }
     });
 
-    document.addEventListener('DOMContentLoaded', renderQuestion);
-    // also render immediately in case DOMContentLoaded already fired
     renderQuestion();
   </script>
 </body>
