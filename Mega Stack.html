@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rage / Mega Stack</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: black;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 800px;
+            text-align: center;
+        }
+        .question {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            background-color: white;
+            color: black;
+            border: none;
+            border-radius: 5px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: white;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
+        .progress {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="progress" id="progress">Question 1 of 33</div>
+        <div class="question" id="question"></div>
+        <input type="text" id="answer" placeholder="Your answer here">
+        <div class="buttons">
+            <button id="back" disabled>Back</button>
+            <button id="next">Next</button>
+        </div>
+    </div>
+    <script>
+        // Array of questions with placeholders
+        const questions = [
+            "What is the trigger for your rage?",
+            "What are your current feelings about {{trigger}}?",
+            "Tell the original story of {{trigger}} in your own words.",
+            "What is the 'me' version of the story? (e.g., 'I am worthless because...')",
+            "What is the opposite version of the story? (e.g., 'I am worthy because...')",
+            "What is the desired version of the story? (e.g., 'I am capable because...')",
+            "What do you want instead of {{currentFeelings}}?",
+            "How would you feel if you released {{currentFeelings}}?",
+            "What is the original story of {{trigger}}? (Reaffirm)",
+            "What is the 'me' version of the story? (Reaffirm)",
+            "What is the opposite version of the story? (Reaffirm)",
+            "What is the desired version of the story? (Reaffirm)",
+            "What do you want instead of {{currentFeelings}}? (Reaffirm)",
+            "How would you feel if you released {{currentFeelings}}? (Reaffirm)",
+            "Imagine letting go of {{originalStory}}. What happens?",
+            "What if {{meVersion}} was not true?",
+            "What if {{oppositeVersion}} was true?",
+            "What if {{desiredVersion}} was your reality?",
+            "What do you want to feel instead of {{currentFeelings}}?",
+            "Release
