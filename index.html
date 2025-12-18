@@ -5,164 +5,436 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rage Stack</title>
   <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #000000;
+      --muted: #666666;
+      --border: #000000;
+    }
+    * { box-sizing: border-box; }
     body {
-      font-family: Arial, sans-serif;
-      background: #fff;
-      color: #000;
-      padding: 40px;
-      max-width: 800px;
-      margin: auto;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
     }
     h1 {
-      border-bottom: 1px solid #000;
-      padding-bottom: 0.2em;
+      margin: 0;
+      font-size: 56px;
+      letter-spacing: -0.5px;
+      line-height: 1.05;
     }
-    #question-box {
-      margin-top: 40px;
+    .sub {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
     }
-    #question-label {
-      font-weight: bold;
-      margin-bottom: 20px;
-      display: block;
+    .rule {
+      height: 1px;
+      background: var(--border);
+      margin: 18px 0 28px;
     }
-    #answer-box {
-      width: 100%;
-      padding: 10px;
-      font-size: 1em;
-      margin-bottom: 20px;
-      height: 120px;
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
-    .nav-buttons button {
-      padding: 10px 20px;
-      font-size: 1em;
-      margin-right: 10px;
-      background: #000;
-      color: #fff;
-      border: none;
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--fg);
+      color: var(--bg);
+      padding: 10px 14px;
+      font-size: 14px;
       cursor: pointer;
+    }
+    .btn.secondary {
+      background: var(--bg);
+      color: var(--fg);
+    }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .card {
+      border: 1px solid var(--border);
+      padding: 22px;
+    }
+    .progress {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .question {
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 1.35;
+      margin: 0 0 12px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 190px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid var(--border);
+      font-size: 16px;
+      line-height: 1.4;
+      outline: none;
+    }
+    textarea:focus {
+      box-shadow: 0 0 0 2px #000000;
+    }
+    .nav {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .toast {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 16px;
+    }
+    @media (max-width: 640px) {
+      h1 { font-size: 40px; }
     }
   </style>
 </head>
 <body>
-  <h1>Rage Stack</h1>
-  <div id="question-box">
-    <span id="question-label"></span>
-    <textarea id="answer-box"></textarea>
-    <div class="nav-buttons">
-      <button id="back-btn">Back</button>
-      <button id="next-btn">Next</button>
-      <button id="save-btn">Finish & Save</button>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Rage Stack</h1>
+        <div class="sub">Step-by-step stack. Autosaves locally.</div>
+      </div>
+      <div class="top-actions">
+        <button class="btn secondary" id="printBtn" title="Open a print-friendly version">Print</button>
+        <button class="btn secondary" id="downloadBtn" title="Download as a .txt file">Download</button>
+        <button class="btn secondary" id="resetBtn" title="Clear answers and start over">Reset</button>
+      </div>
+    </header>
+
+    <div class="rule"></div>
+
+    <div class="card">
+      <div class="progress">
+        <div id="progressText">Q 1 / 1</div>
+        <div id="autosaveText">Saved</div>
+      </div>
+
+      <div class="question" id="questionText">Loading...</div>
+      <textarea id="answerBox" placeholder="Type your answer here..."></textarea>
+
+      <div class="nav">
+        <button class="btn" id="backBtn">Back</button>
+        <button class="btn" id="nextBtn">Next</button>
+        <button class="btn" id="finishBtn">Finish & Save</button>
+      </div>
+
+      <div class="hint">Shortcuts: Cmd+Enter = Next. Cmd+Shift+Enter = Back.</div>
+      <div class="toast" id="toast"></div>
     </div>
   </div>
 
   <script>
-    const questions = [
-      'What are you going to title this rage stack?',
-      'What domain of CORE 4 are you stacking?',
-      'Who or what are you stacking?',
-      'In this moment, why has {{trigger}} triggered you to feel rage?',
-      'If you could scream at {{trigger}}, what would you say?',
-      'If you could force {{trigger}} to think, say, or do anything, what would it be?',
-      'With no filter or constraints, what do you genuinely think about {{trigger}}?',
-      'What is it that you never want to experience again with {{trigger}}?',
-      'What are the non-emotional facts about the situation with {{trigger}}?',
-      'What is the story you\'re telling yourself, created by this trigger, about {{trigger}} and the situation?',
-      'Describe the single word feelings that arise for you when you tell yourself that story.',
-      'Describe the specific thoughts and actions that arise for you when you tell yourself this story.',
-      'What evidence do you have to support this story as absolutely true?',
-      'Is the story "{{originalStory}}" true?',
-      'Are you 100% certain the story "{{originalStory}}" is true?',
-      'What might be possible for you in this situation if this story was false?',
-      'Regardless of your rage trigger with {{trigger}} and the original story "{{originalStory}}", what do you truly want for you in and beyond this situation?',
-      'What do you want for {{trigger}} in and beyond this situation?',
-      'What do you want for {{trigger}} and YOU in and beyond this situation?',
-      'If you keep telling yourself this original story "{{originalStory}}", will it ultimately give you what you want?',
-      'Are you ready to let go of the original story and expand your mind and reality around this trigger while you walk the block?',
-      'Letting go of the original story "{{originalStory}}" and choosing to make it about specifically about you, what is the ME VERSION of the story?',
-      'What evidence can you find to prove this ME story is true and open up your mind further?',
-      'Will telling yourself this ME story give you what you want?',
-      'What is the OPPOSITE VERSION of the story?',
-      'What evidence can you find to prove this opposite story is true and open up your mind further?',
-      'Will telling yourself this opposite story give you what you want?',
-      'What is your DESIRED VERSION of the story?',
-      'What evidence can you find to prove this desired story is accurate so you can weaponize yourself to move forward today?',
-      'Will telling yourself this desired story give you what you want?',
-      'Why has this rage trigger been extremely positive?',
-      'What is the singular lesson on life you are taking from this stack?',
-      'How does this lesson apply to your BODY domain?',
-      'How does this lesson apply to your BEING domain?',
-      'How does this lesson apply to your BALANCE domain?',
-      'How does this lesson apply to your BUSINESS domain?',
-      'What is the most significant revelation or insight you are leaving this Rage stack with, and why do you feel that way?',
-      'Compared to how you felt when you started this Rage stack, what singular words would you use to describe how you feel now completing it?',
-      'What immediate actions are you committed to taking leaving this stack?'
+    // Data-driven steps. Use {{key}} placeholders that update live.
+    const STEPS = [
+      { id: 'title', key: 'title', prompt: 'What are you going to title this rage stack?' },
+      { id: 'core4', key: 'core4', prompt: 'What domain of CORE 4 are you stacking?' },
+      { id: 'who', key: 'trigger', prompt: 'Who or what are you stacking?' },
+
+      { id: 'whyTriggered', key: null, prompt: 'In this moment, why has {{trigger}} triggered you to feel rage?' },
+      { id: 'scream', key: null, prompt: 'If you could scream at {{trigger}}, what would you say?' },
+      { id: 'force', key: null, prompt: 'If you could force {{trigger}} to think, say, or do anything, what would it be?' },
+      { id: 'trueThink', key: null, prompt: 'With no filter or constraints, what do you genuinely think about {{trigger}}?' },
+      { id: 'neverAgain', key: null, prompt: 'What is it that you never want to experience again with {{trigger}}?' },
+
+      { id: 'facts', key: null, prompt: 'What are the non-emotional facts about the situation with {{trigger}}?' },
+      { id: 'story', key: 'originalStory', prompt: 'What is the story you are telling yourself, created by this trigger, about {{trigger}} and the situation?' },
+
+      { id: 'feelingsStory', key: null, prompt: 'Describe the single word feelings that arise for you when you tell yourself that story.' },
+      { id: 'thoughtsActions', key: null, prompt: 'Describe the specific thoughts and actions that arise for you when you tell yourself this story.' },
+      { id: 'evidenceTrue', key: null, prompt: 'What evidence do you have to support this story as absolutely true?' },
+
+      { id: 'isTrue', key: null, prompt: 'Is the story "{{originalStory}}" true?' },
+      { id: 'certainTrue', key: null, prompt: 'Are you 100% certain the story "{{originalStory}}" is true?' },
+      { id: 'possibleIfFalse', key: null, prompt: 'What might be possible for you in this situation if this story was false?' },
+
+      { id: 'wantForYou', key: 'whatYouWant', prompt: 'Regardless of your rage trigger with {{trigger}} and the original story "{{originalStory}}", what do you truly want for you in and beyond this situation?' },
+      { id: 'wantForTrigger', key: null, prompt: 'What do you want for {{trigger}} in and beyond this situation?' },
+      { id: 'wantForBoth', key: null, prompt: 'What do you want for {{trigger}} and YOU in and beyond this situation?' },
+
+      { id: 'keepStory', key: null, prompt: 'If you keep telling yourself this original story "{{originalStory}}", will it ultimately give you what you want?' },
+      { id: 'readyLetGo', key: null, prompt: 'Are you ready to let go of the original story and expand your mind and reality around this trigger while you walk the block?' },
+
+      { id: 'meVersion', key: 'meVersion', prompt: 'Letting go of the original story "{{originalStory}}" and choosing to make it specifically about you, what is the ME VERSION of the story?' },
+      { id: 'meEvidence', key: null, prompt: 'What evidence can you find to prove this ME story is true and open up your mind further?' },
+      { id: 'meGivesWant', key: null, prompt: 'Will telling yourself this ME story give you what you want?' },
+
+      { id: 'oppositeVersion', key: 'oppositeVersion', prompt: 'What is the OPPOSITE VERSION of the story?' },
+      { id: 'oppositeEvidence', key: null, prompt: 'What evidence can you find to prove this opposite story is true and open up your mind further?' },
+      { id: 'oppositeGivesWant', key: null, prompt: 'Will telling yourself this opposite story give you what you want?' },
+
+      { id: 'desiredVersion', key: 'desiredVersion', prompt: 'What is your DESIRED VERSION of the story?' },
+      { id: 'desiredEvidence', key: null, prompt: 'What evidence can you find to prove this desired story is accurate so you can weaponize yourself to move forward today?' },
+      { id: 'desiredGivesWant', key: null, prompt: 'Will telling yourself this desired story give you what you want?' },
+
+      { id: 'triggerPositive', key: null, prompt: 'Why has this rage trigger been extremely positive?' },
+      { id: 'lesson', key: null, prompt: 'What is the singular lesson on life you are taking from this stack?' },
+      { id: 'actions', key: null, prompt: 'What immediate actions are you committed to taking leaving this stack?' }
     ];
 
-    let current = 0;
-    const answers = Array(questions.length).fill('');
+    const STORAGE_KEY = 'rage_stack_v2';
 
-    const labelEl = document.getElementById('question-label');
-    const boxEl = document.getElementById('answer-box');
-    const nextBtn = document.getElementById('next-btn');
-    const backBtn = document.getElementById('back-btn');
-    const saveBtn = document.getElementById('save-btn');
+    const state = {
+      currentIndex: 0,
+      vars: {},
+      answers: {}
+    };
 
-    function renderQuestion() {
-      const raw = questions[current];
-      const q = raw
-        .replace(/{{trigger}}/g, answers[2] || '[trigger]')
-        .replace(/{{originalStory}}/g, answers[9] || '[original story]')
-        .replace(/{{meVersion}}/g, answers[21] || '[me version]')
-        .replace(/{{oppositeVersion}}/g, answers[24] || '[opposite version]')
-        .replace(/{{desiredVersion}}/g, answers[27] || '[desired version]')
-        .replace(/{{whatYouWant}}/g, answers[16] || '[what you want]');
+    const questionText = document.getElementById('questionText');
+    const answerBox = document.getElementById('answerBox');
+    const progressText = document.getElementById('progressText');
+    const autosaveText = document.getElementById('autosaveText');
+    const toast = document.getElementById('toast');
 
-      labelEl.textContent = `Q${current+1}/${questions.length}: ${q}`;
-      boxEl.value = answers[current];
-      boxEl.style.display = 'block';
-      boxEl.focus();
-      backBtn.disabled = current === 0;
-      nextBtn.disabled = current === questions.length - 1;
+    const backBtn = document.getElementById('backBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const finishBtn = document.getElementById('finishBtn');
+
+    const resetBtn = document.getElementById('resetBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const printBtn = document.getElementById('printBtn');
+
+    function nowISODate() {
+      return new Date().toISOString().split('T')[0];
     }
 
-    nextBtn.addEventListener('click', () => {
-      answers[current] = boxEl.value;
-      if (current < questions.length - 1) current++;
-      renderQuestion();
-    });
+    function showToast(msg) {
+      toast.textContent = msg;
+      if (!msg) return;
+      setTimeout(() => {
+        if (toast.textContent === msg) toast.textContent = '';
+      }, 2000);
+    }
 
-    backBtn.addEventListener('click', () => {
-      answers[current] = boxEl.value;
-      if (current > 0) current--;
-      renderQuestion();
-    });
-
-    saveBtn.addEventListener('click', () => {
-      answers[current] = boxEl.value;
-      const date = new Date().toISOString().split('T')[0];
-      let content = `RAGE STACK | ${answers[0] || 'Untitled'} | ${date}\n\n`;
-      questions.forEach((q, i) => {
-        const filled = q
-          .replace(/{{trigger}}/g, answers[2] || '[trigger]')
-          .replace(/{{originalStory}}/g, answers[9] || '[original story]')
-          .replace(/{{meVersion}}/g, answers[21] || '[me version]')
-          .replace(/{{oppositeVersion}}/g, answers[24] || '[opposite version]')
-          .replace(/{{desiredVersion}}/g, answers[27] || '[desired version]')
-          .replace(/{{whatYouWant}}/g, answers[16] || '[what you want]');
-        content += `${i+1}. ${filled}\n${answers[i] || ''}\n\n`;
+    function resolveTemplate(template) {
+      return template.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, function(_, key) {
+        const val = state.vars[key];
+        return (val && String(val).trim().length) ? String(val) : '[' + key + ']';
       });
-      const blob = new Blob([content], { type: 'text/plain' });
+    }
+
+    function saveLocal() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        autosaveText.textContent = 'Saved';
+      } catch (e) {
+        autosaveText.textContent = 'Not saved';
+      }
+    }
+
+    function loadLocal() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return;
+
+        state.currentIndex = Number.isFinite(parsed.currentIndex) ? parsed.currentIndex : 0;
+        state.vars = parsed.vars && typeof parsed.vars === 'object' ? parsed.vars : {};
+        state.answers = parsed.answers && typeof parsed.answers === 'object' ? parsed.answers : {};
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function commitCurrentAnswer() {
+      const step = STEPS[state.currentIndex];
+      const value = answerBox.value || '';
+      state.answers[step.id] = value;
+      if (step.key) state.vars[step.key] = value;
+
+      autosaveText.textContent = 'Saving...';
+      saveLocal();
+    }
+
+    function render() {
+      const step = STEPS[state.currentIndex];
+      const q = resolveTemplate(step.prompt);
+
+      questionText.textContent = q;
+      answerBox.value = state.answers[step.id] || '';
+
+      progressText.textContent = 'Q ' + (state.currentIndex + 1) + ' / ' + STEPS.length;
+
+      backBtn.disabled = state.currentIndex === 0;
+      nextBtn.disabled = state.currentIndex === STEPS.length - 1;
+
+      setTimeout(() => answerBox.focus(), 0);
+    }
+
+    function goNext() {
+      commitCurrentAnswer();
+      if (state.currentIndex < STEPS.length - 1) {
+        state.currentIndex += 1;
+        render();
+      }
+    }
+
+    function goBack() {
+      commitCurrentAnswer();
+      if (state.currentIndex > 0) {
+        state.currentIndex -= 1;
+        render();
+      }
+    }
+
+    function buildExportText() {
+      const title = (state.vars.title && String(state.vars.title).trim()) ? state.vars.title : 'Untitled';
+      const date = nowISODate();
+
+      let out = 'RAGE STACK | ' + title + ' | ' + date + '\n\n';
+      for (let i = 0; i < STEPS.length; i += 1) {
+        const step = STEPS[i];
+        const q = resolveTemplate(step.prompt);
+        const a = state.answers[step.id] || '';
+        out += (i + 1) + '. ' + q + '\n' + a + '\n\n';
+      }
+      return out;
+    }
+
+    function downloadTextFile() {
+      commitCurrentAnswer();
+      const title = (state.vars.title && String(state.vars.title).trim()) ? state.vars.title : 'Untitled';
+      const date = nowISODate();
+      const safeTitle = title.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 60);
+      const filename = 'rage_stack_' + safeTitle + '_' + date + '.txt';
+
+      const blob = new Blob([buildExportText()], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `rage_stack_${date}.txt`;
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
+      showToast('Downloaded');
+    }
+
+    function openPrintView() {
+      commitCurrentAnswer();
+      const title = (state.vars.title && String(state.vars.title).trim()) ? state.vars.title : 'Untitled';
+      const date = nowISODate();
+
+      const w = window.open('', '_blank');
+      if (!w) return;
+
+      const rows = STEPS.map((step, i) => {
+        const q = resolveTemplate(step.prompt);
+        const a = (state.answers[step.id] || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return (
+          '<div style="margin:0 0 18px;">' +
+            '<div style="font-size:14px;margin:0 0 6px;"><strong>' + (i + 1) + '. ' + q + '</strong></div>' +
+            '<div style="font-size:14px;line-height:1.45;">' + (a ? a.replace(/\n/g, '<br>') : '') + '</div>' +
+          '</div>'
+        );
+      }).join('');
+
+      w.document.write(
+        '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0" />' +
+        '<title>Rage Stack Print</title>' +
+        '<style>body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;margin:0;}' +
+        '.pwrap{max-width:900px;margin:0 auto;padding:42px 28px;}' +
+        'h1{margin:0;font-size:34px;}.meta{margin-top:8px;color:#444;font-size:13px;}' +
+        '.rule{height:1px;background:#000;margin:16px 0 22px;}@media print{.no-print{display:none;}}</style>' +
+        '</head><body><div class="pwrap">' +
+        '<div class="no-print" style="margin-bottom:16px;">' +
+        '<button onclick="window.print()" style="padding:10px 14px;border:1px solid #000;background:#000;color:#fff;cursor:pointer;">Print</button>' +
+        '</div>' +
+        '<h1>Rage Stack</h1>' +
+        '<div class="meta"><strong>Title:</strong> ' + title + ' &nbsp; | &nbsp; <strong>Date:</strong> ' + date + '</div>' +
+        '<div class="rule"></div>' +
+        rows +
+        '</div></body></html>'
+      );
+      w.document.close();
+      showToast('Print view opened');
+    }
+
+    function resetAll() {
+      const ok = confirm('Reset and clear all saved answers?');
+      if (!ok) return;
+      localStorage.removeItem(STORAGE_KEY);
+      state.currentIndex = 0;
+      state.vars = {};
+      state.answers = {};
+      autosaveText.textContent = 'Saved';
+      render();
+      showToast('Reset');
+    }
+
+    nextBtn.addEventListener('click', goNext);
+    backBtn.addEventListener('click', goBack);
+
+    finishBtn.addEventListener('click', () => {
+      downloadTextFile();
+      openPrintView();
     });
 
-    document.addEventListener('DOMContentLoaded', renderQuestion);
-    // also render immediately in case DOMContentLoaded already fired
-    renderQuestion();
+    downloadBtn.addEventListener('click', downloadTextFile);
+    printBtn.addEventListener('click', openPrintView);
+    resetBtn.addEventListener('click', resetAll);
+
+    let typeTimer = null;
+    answerBox.addEventListener('input', () => {
+      autosaveText.textContent = 'Saving...';
+      if (typeTimer) clearTimeout(typeTimer);
+      typeTimer = setTimeout(() => {
+        commitCurrentAnswer();
+      }, 250);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey && !e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        goNext();
+      }
+      if (e.metaKey && e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        goBack();
+      }
+    });
+
+    loadLocal();
+    if (state.currentIndex < 0) state.currentIndex = 0;
+    if (state.currentIndex > STEPS.length - 1) state.currentIndex = STEPS.length - 1;
+
+    render();
   </script>
 </body>
 </html>
