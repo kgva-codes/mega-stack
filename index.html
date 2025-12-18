@@ -41,6 +41,13 @@
       border: none;
       cursor: pointer;
     }
+      #keyboard-hints {
+      margin-top: -8px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: #444;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -48,6 +55,12 @@
   <div id="question-box">
     <span id="question-label"></span>
     <textarea id="answer-box"></textarea>
+    <div id="keyboard-hints">
+      <strong>Keyboard shortcuts:</strong><br>
+      Ctrl / Cmd + Enter → Next question<br>
+      Ctrl / Cmd + ← → Previous question<br>
+      Ctrl / Cmd + S → Finish &amp; Save PDF
+    </div>
     <div class="nav-buttons">
       <button id="back-btn">Back</button>
       <button id="next-btn">Next</button>
@@ -224,6 +237,22 @@
 
       const safeTitle = title.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 50);
       doc.save(`mega_stack_${safeTitle}_${date}.pdf`);
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        nextBtn.click();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        backBtn.click();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveBtn.click();
+      }
     });
 
     document.addEventListener('DOMContentLoaded', renderQuestion);
