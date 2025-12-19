@@ -94,34 +94,33 @@
       'What do you want for {{person}} in this situation?',
       'What do you want for YOU and {{person}} in this situation?',
       'Your Original Story is "{{originalStory}}". What is the ME Version?',
-      'What evidence do you have to prove this ME Version is true?',
+      'What evidence do you have to prove this ME Version is TRUE?',
       'Your Original Story is "{{originalStory}}". What is the OPPOSITE Version?',
-      'What evidence do you have to prove this Opposite Version is true?',
+      'What evidence do you have to prove this Opposite Version is TRUE?',
       'Your Original Story is "{{originalStory}}". What is the DESIRED Version?',
-      'What evidence do you have to prove this Desired Version is true?',
+      'What evidence do you have to prove this Desired Version is TRUE?',
       'Your Original Story is "{{originalStory}}". What you wanted was: {{whatYouWant}}. Will the ORIGINAL story give you what you want?',
       'Your Me Story is {{meVersion}}. What you wanted was {{whatYouWant}}. Will the ME Version of the story give you what you want?',
       'Your Opposite Story is {{oppositeVersion}}. What you wanted was {{whatYouWant}}. Will the OPPOSITE Version of the story give you what you want?',
       'Your Desired Story is {{desiredVersion}}. What you wanted was {{whatYouWant}}. Will the Desired Story give you what you want?',
-      'Now Mike, which version of the story are you choosing? You said you wanted: {{whatYouWant}}. Your Original Story is: {{originalStory}}. Your Me Story is: {{meVersion}}. Your Opposite Story is: {{oppositeVersion}}. Your Desired Story is: {{desiredVersion}}.',
+      'Now Michael, which version of the story are you choosing? You said you wanted: {{whatYouWant}}. Your Original Story is: {{originalStory}}. Your Me Story is: {{meVersion}}. Your Opposite Story is: {{oppositeVersion}}. Your Desired Story is: {{desiredVersion}}.',
       'Why are you choosing this story?',
-      'What triggered you about {{person}} was: {{triggerDesc}}. You said you wanted: {{whatYouWant}}. The story you chose is: {{desiredVersion}}. Why has this trigger been positive?'
+      'What triggered you about {{person}} was: {{triggerDesc}}. You said you wanted: {{whatYouWant}}. The story you chose is: {{chosenVersion}}. Why has this trigger been positive?'
+      'What is the lesson you learned from this trigger?'
+      'How does that lesson apply to your BODY domain?'
+      'How does that lesson apply to your BEING domain?'
+      'How does that lesson apply to your BALANCE domain?'
+      'How does that lesson apply to your BUSINESS domain?'
+      'What is the most significant insight/revelation you\'re leaving this stack with?'
+      'Why do you feel that this insight/revelation is significant?'
+      'What best describes your current state of being?'
     ];
 
     let current = 0;
     const answers = Array(questions.length).fill('');
 
-    const vars = {
-      stackTitle: '',
-      core4: '',
-      person: '',
-      triggerDesc: '',
-      feelings: '',
-      originalStory: '',
-      whatYouWant: '',
-      meVersion: '',
-      oppositeVersion: '',
-      desiredVersion: ''
+    const vars = {$1desiredVersion: '',
+      chosenVersion: ''
     };
 
     function syncVarsByIndex(i, value) {
@@ -135,6 +134,12 @@
       if (i === 21) vars.meVersion = value;
       if (i === 23) vars.oppositeVersion = value;
       if (i === 25) vars.desiredVersion = value;
+
+      // More robust capture for chosen story
+      const q = (questions[i] || '').toLowerCase();
+      if (q.includes('which version of the story are you choosing')) {
+        vars.chosenVersion = value;
+      }
     }
 
     const labelEl = document.getElementById('question-label');
@@ -152,7 +157,8 @@
         .replace(/{{whatYouWant}}/g, vars.whatYouWant || '[what you want]')
         .replace(/{{meVersion}}/g, vars.meVersion || '[me version]')
         .replace(/{{oppositeVersion}}/g, vars.oppositeVersion || '[opposite version]')
-        .replace(/{{desiredVersion}}/g, vars.desiredVersion || '[desired version]');
+        .replace(/{{desiredVersion}}/g, vars.desiredVersion || '[desired version]')
+        .replace(/{{chosenVersion}}/g, vars.chosenVersion || '[chosen version]');
     }
 
     function renderQuestion() {
