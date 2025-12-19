@@ -6,8 +6,11 @@
   <title>Mega Stack</title>
 
   <!-- Favicon (simple black dot) -->
-  <link rel="icon" type="image/svg+xml"
-    href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="18" fill="black"/></svg>'>
+  <link
+    rel="icon"
+    type="image/svg+xml"
+    href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="18" fill="black"/></svg>'
+  >
 
   <!-- jsPDF for PDF export -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -95,7 +98,7 @@
 
   <div id="question-box">
     <span id="question-label"></span>
-    <textarea id="answer-box" placeholder=""></textarea>
+    <textarea id="answer-box"></textarea>
 
     <div class="guides">
       <b>Keyboard shortcuts:</b><br>
@@ -131,7 +134,6 @@
       chosenVersion: ''
     };
 
-    // NOTE: Make sure placeholders match fillTemplate() below.
     const questions = [
       'What are you going to title this Mega Stack?',
       'What area of the CORE 4 are you triggered by?',
@@ -211,23 +213,22 @@
 
     /***********************
      * Map answers -> vars
-     * (Indexes aligned to question list)
      ***********************/
     function syncVarsFromAnswers() {
-      vars.stackTitle   = (answers[0]  || '').trim();  // title
-      vars.core4        = (answers[1]  || '').trim();  // core4
-      vars.person       = (answers[2]  || '').trim();  // who
-      vars.triggerDesc  = (answers[3]  || '').trim();  // what about person
-      vars.feelings     = (answers[4]  || '').trim();  // feelings
+      vars.stackTitle    = (answers[0]  || '').trim();
+      vars.core4         = (answers[1]  || '').trim();
+      vars.person        = (answers[2]  || '').trim();
+      vars.triggerDesc   = (answers[3]  || '').trim();
+      vars.feelings      = (answers[4]  || '').trim();
 
-      vars.originalStory = (answers[11] || '').trim(); // story you tell
-      vars.whatYouWant   = (answers[18] || '').trim(); // what you want for YOU
+      vars.originalStory = (answers[11] || '').trim();
+      vars.whatYouWant   = (answers[18] || '').trim();
 
-      vars.meVersion       = (answers[21] || '').trim(); // ME version
-      vars.oppositeVersion = (answers[23] || '').trim(); // Opposite version
-      vars.desiredVersion  = (answers[25] || '').trim(); // Desired version
+      vars.meVersion       = (answers[21] || '').trim();
+      vars.oppositeVersion = (answers[23] || '').trim();
+      vars.desiredVersion  = (answers[25] || '').trim();
 
-      // chosenVersion is answered at index 31 ("which version are you choosing?")
+      // "Which version are you choosing?" is index 31
       vars.chosenVersion = (answers[31] || '').trim();
     }
 
@@ -236,10 +237,11 @@
      ***********************/
     function renderQuestion() {
       syncVarsFromAnswers();
-      const q = fillTemplate(questions[current]);
 
+      const q = fillTemplate(questions[current]);
       labelEl.textContent = `Q${current + 1}/${questions.length}: ${q}`;
       boxEl.value = answers[current] || '';
+
       backBtn.disabled = current === 0;
       nextBtn.disabled = current === questions.length - 1;
 
@@ -266,8 +268,9 @@
     }
 
     /***********************
-     * PDF Export (no blank cover page)
-     * Fix: properly add pages + repeat header, so there is no empty page.
+     * PDF Export
+     * Header only on page 1.
+     * Subsequent pages continue without header.
      ***********************/
     function savePDF() {
       answers[current] = boxEl.value;
@@ -295,34 +298,29 @@
         .trim()
         .replace(/\s+/g, '_');
 
-      // Draw header and return the Y position where content should start
-      function drawHeader() {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(28);
-        doc.text('Mega Stack', marginLeft, topMargin);
+      // Page 1 Header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(28);
+      doc.text('Mega Stack', marginLeft, topMargin);
 
-        doc.setFontSize(12);
-        // Keep it simple and consistent with your screenshot
-        doc.text(`Title: ${vars.stackTitle || ''}`, marginLeft, topMargin + 24);
-        doc.text(`Date: ${dateStr}`, marginLeft, topMargin + 40);
-        doc.text(`CORE 4: ${vars.core4 || ''}`, marginLeft, topMargin + 56);
-        doc.text(`Person: ${vars.person || ''}`, marginLeft, topMargin + 72);
+      doc.setFontSize(12);
+      doc.text(`Title: ${vars.stackTitle || ''}   |   Date: ${dateStr}`, marginLeft, topMargin + 24);
 
-        doc.setLineWidth(0.75);
-        doc.line(marginLeft, topMargin + 90, pageWidth - marginRight, topMargin + 90);
+      doc.setLineWidth(0.75);
+      doc.line(marginLeft, topMargin + 42, pageWidth - marginRight, topMargin + 42);
 
-        return topMargin + 112; // first Q/A starts right below header
+      // Start content right under header
+      let y = topMargin + 70;
+
+      function newPageNoHeader() {
+        doc.addPage();
+        y = topMargin; // start near top (no header)
       }
 
-      // Page 1 header
-      let y = drawHeader();
-
       function ensureSpace(neededHeight) {
-        if (y + neededHeight <= pageHeight - bottomMargin) return;
-
-        // Start a new page and repeat header so content continues immediately
-        doc.addPage();
-        y = drawHeader();
+        if (y + neededHeight > pageHeight - bottomMargin) {
+          newPageNoHeader();
+        }
       }
 
       for (let i = 0; i < questions.length; i++) {
@@ -370,33 +368,25 @@
     backBtn.addEventListener('click', goBack);
     saveBtn.addEventListener('click', savePDF);
 
-    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       const isMac = navigator.platform.toUpperCase().includes('MAC');
       const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
 
-      // Ctrl/Cmd + Enter => Next
       if (ctrlOrCmd && e.key === 'Enter') {
         e.preventDefault();
         goNext();
       }
-
-      // Ctrl/Cmd + Left Arrow => Back
       if (ctrlOrCmd && e.key === 'ArrowLeft') {
         e.preventDefault();
         goBack();
       }
-
-      // Ctrl/Cmd + S => Save PDF
       if (ctrlOrCmd && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         savePDF();
       }
     });
 
-    // Boot
     function boot() {
-      boxEl.value = '';
       current = 0;
       renderQuestion();
     }
