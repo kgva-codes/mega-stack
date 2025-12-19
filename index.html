@@ -2,75 +2,136 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Mega Stack</title>
-  <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- Favicon (simple black dot) -->
+  <link rel="icon" type="image/svg+xml"
+    href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="18" fill="black"/></svg>'>
+
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
-    body {
+    :root { --maxw: 980px; }
+    body{
       font-family: Arial, sans-serif;
-      background: #fff;
-      color: #000;
-      padding: 40px;
-      max-width: 800px;
-      margin: auto;
+      background:#fff;
+      color:#000;
+      padding:40px;
+      max-width: var(--maxw);
+      margin:0 auto;
     }
-    h1 {
-      border-bottom: 1px solid #000;
-      padding-bottom: 0.2em;
+    h1{
+      font-size: 56px;
+      margin: 0 0 18px 0;
+      letter-spacing: -0.5px;
     }
-    #question-box {
-      margin-top: 40px;
+    .divider{
+      height:1px;
+      background:#000;
+      margin: 0 0 26px 0;
     }
-    #question-label {
-      font-weight: bold;
-      margin-bottom: 20px;
-      display: block;
+
+    #question-box{ margin-top: 10px; }
+
+    #question-label{
+      font-weight: 700;
+      font-size: 18px;
+      display:block;
+      margin: 0 0 12px 0;
+      line-height: 1.35;
+      white-space: pre-wrap;
     }
-    #answer-box {
-      width: 100%;
-      padding: 10px;
-      font-size: 1em;
-      margin-bottom: 20px;
-      height: 120px;
+
+    #answer-box{
+      width:100%;
+      min-height: 230px;
+      padding: 14px;
+      font-size: 16px;
+      border: 2px solid #000;
+      outline: none;
+      resize: vertical;
+      box-sizing: border-box;
     }
-    .nav-buttons button {
-      padding: 10px 20px;
-      font-size: 1em;
-      margin-right: 10px;
-      background: #000;
-      color: #fff;
-      border: none;
-      cursor: pointer;
+
+    .guides{
+      margin-top: 14px;
+      font-size: 18px;
+      line-height: 1.45;
+      color:#333;
     }
-      #keyboard-hints {
-      margin-top: -8px;
-      margin-bottom: 18px;
-      font-size: 13px;
-      color: #444;
-      line-height: 1.4;
+    .guides b{ color:#000; }
+
+    .nav-buttons{
+      display:flex;
+      gap: 18px;
+      margin-top: 18px;
+      align-items: center;
+    }
+    .nav-buttons button{
+      padding: 14px 28px;
+      font-size: 22px;
+      background:#000;
+      color:#fff;
+      border:none;
+      cursor:pointer;
+    }
+    .nav-buttons button:disabled{
+      opacity: 0.35;
+      cursor:not-allowed;
+    }
+
+    .subline{
+      font-size: 14px;
+      color:#555;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <h1>Mega Stack</h1>
+  <div class="divider"></div>
+
   <div id="question-box">
     <span id="question-label"></span>
-    <textarea id="answer-box"></textarea>
-    <div id="keyboard-hints">
-      <strong>Keyboard shortcuts:</strong><br>
+    <textarea id="answer-box" placeholder=""></textarea>
+
+    <div class="guides">
+      <b>Keyboard shortcuts:</b><br>
       Ctrl / Cmd + Enter → Next question<br>
       Ctrl / Cmd + ← → Previous question<br>
       Ctrl / Cmd + S → Finish &amp; Save PDF
     </div>
+
     <div class="nav-buttons">
       <button id="back-btn">Back</button>
       <button id="next-btn">Next</button>
-      <button id="save-btn">Finish & Save</button>
+      <button id="save-btn">Finish &amp; Save</button>
     </div>
+
+    <div class="subline" id="progress"></div>
   </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
+    /***********************
+     * Variables + Questions
+     ***********************/
+    const vars = {
+      stackTitle: '',
+      core4: '',
+      person: '',
+      triggerDesc: '',
+      feelings: '',
+      originalStory: '',
+      whatYouWant: '',
+      meVersion: '',
+      oppositeVersion: '',
+      desiredVersion: '',
+      chosenVersion: ''
+    };
+
+    // NOTE: Make sure placeholders match fillTemplate() below.
     const questions = [
       'What are you going to title this Mega Stack?',
       'What area of the CORE 4 are you triggered by?',
@@ -93,11 +154,11 @@
       'Regardless of this emotional trigger with {{person}} and the current story about it, what do you truly want for YOU in this situation?',
       'What do you want for {{person}} in this situation?',
       'What do you want for YOU and {{person}} in this situation?',
-      'Your Original Story is "{{originalStory}}". What is the ME Version of your Original Story?',
+      'Your Original Story is "{{originalStory}}". What is the ME Version?',
       'What evidence do you have to prove this ME Version is TRUE?',
-      'Your Original Story is "{{originalStory}}". What is the OPPOSITE Version of your Original Story?',
+      'Your Original Story is "{{originalStory}}". What is the OPPOSITE Version?',
       'What evidence do you have to prove this Opposite Version is TRUE?',
-      'Your Original Story is "{{originalStory}}". What is the DESIRED Version of your Original Story?',
+      'Your Original Story is "{{originalStory}}". What is the DESIRED Version?',
       'What evidence do you have to prove this Desired Version is TRUE?',
       'Your Original Story is "{{originalStory}}". What you wanted was: {{whatYouWant}}. Will the ORIGINAL story give you what you want?',
       'Your Me Story is {{meVersion}}. What you wanted was {{whatYouWant}}. Will the ME Version of the story give you what you want?',
@@ -105,181 +166,246 @@
       'Your Desired Story is {{desiredVersion}}. What you wanted was {{whatYouWant}}. Will the Desired Story give you what you want?',
       'Now Michael, which version of the story are you choosing? You said you wanted: {{whatYouWant}}. Your Original Story is: {{originalStory}}. Your Me Story is: {{meVersion}}. Your Opposite Story is: {{oppositeVersion}}. Your Desired Story is: {{desiredVersion}}.',
       'Why are you choosing this story?',
-      'What triggered you about {{person}} was: "{{triggerDesc}}." You said you wanted: "{{whatYouWant}}." The story you chose is the "{{chosenVersion}}". Why has this trigger been positive?',
+      'What triggered you about {{person}} was: {{triggerDesc}}. You said you wanted: {{whatYouWant}}. The story you chose is: {{chosenVersion}}. Why has this trigger been positive?',
       'What is the lesson you learned from this trigger?',
       'How does that lesson apply to your BODY domain?',
       'How does that lesson apply to your BEING domain?',
       'How does that lesson apply to your BALANCE domain?',
       'How does that lesson apply to your BUSINESS domain?',
-      'What is the most significant insight or revelation you\'re leaving this stack with?',
-      'Why do you feel that this insight or revelation is significant?',
+      'What is the most significant insight/revelation you\'re leaving this stack with?',
+      'Why do you feel that this insight/revelation is significant?',
       'What best describes your current state of being?'
     ];
 
+    /***********************
+     * State + DOM
+     ***********************/
     let current = 0;
     const answers = Array(questions.length).fill('');
-
-    const vars = {$1desiredVersion: '',
-      chosenVersion: ''
-    };
-
-    function syncVarsByIndex(i, value) {
-      if (i === 0) vars.stackTitle = value;
-      if (i === 1) vars.core4 = value;
-      if (i === 2) vars.person = value;
-      if (i === 3) vars.triggerDesc = value;
-      if (i === 4) vars.feelings = value;
-      if (i === 11) vars.originalStory = value;
-      if (i === 18) vars.whatYouWant = value;
-      if (i === 21) vars.meVersion = value;
-      if (i === 23) vars.oppositeVersion = value;
-      if (i === 25) vars.desiredVersion = value;
-
-      // More robust capture for chosen story
-      const q = (questions[i] || '').toLowerCase();
-      if (q.includes('which version of the story are you choosing')) {
-        vars.chosenVersion = value;
-      }
-    }
 
     const labelEl = document.getElementById('question-label');
     const boxEl = document.getElementById('answer-box');
     const nextBtn = document.getElementById('next-btn');
     const backBtn = document.getElementById('back-btn');
     const saveBtn = document.getElementById('save-btn');
+    const progressEl = document.getElementById('progress');
 
+    /***********************
+     * Template Fill
+     ***********************/
     function fillTemplate(raw) {
+      if (!raw) return '';
+
       return raw
-        .replace(/{{person}}/g, vars.person || '[person]')
-        .replace(/{{triggerDesc}}/g, vars.triggerDesc || '[trigger description]')
-        .replace(/{{feelings}}/g, vars.feelings || '[feelings]')
-        .replace(/{{originalStory}}/g, vars.originalStory || '[original story]')
-        .replace(/{{whatYouWant}}/g, vars.whatYouWant || '[what you want]')
-        .replace(/{{meVersion}}/g, vars.meVersion || '[me version]')
-        .replace(/{{oppositeVersion}}/g, vars.oppositeVersion || '[opposite version]')
-        .replace(/{{desiredVersion}}/g, vars.desiredVersion || '[desired version]')
-        .replace(/{{chosenVersion}}/g, vars.chosenVersion || '[chosen version]');
+        .replace(/{{stackTitle}}/g, vars.stackTitle || '')
+        .replace(/{{core4}}/g, vars.core4 || '')
+        .replace(/{{person}}/g, vars.person || '')
+        .replace(/{{triggerDesc}}/g, vars.triggerDesc || '')
+        .replace(/{{feelings}}/g, vars.feelings || '')
+        .replace(/{{originalStory}}/g, vars.originalStory || '')
+        .replace(/{{whatYouWant}}/g, vars.whatYouWant || '')
+        .replace(/{{meVersion}}/g, vars.meVersion || '')
+        .replace(/{{oppositeVersion}}/g, vars.oppositeVersion || '')
+        .replace(/{{desiredVersion}}/g, vars.desiredVersion || '')
+        .replace(/{{chosenVersion}}/g, vars.chosenVersion || '');
     }
 
+    /***********************
+     * Map answers -> vars
+     * (Indexes aligned to question list)
+     ***********************/
+    function syncVarsFromAnswers() {
+      vars.stackTitle   = (answers[0]  || '').trim(); // title
+      vars.core4        = (answers[1]  || '').trim(); // core4
+      vars.person       = (answers[2]  || '').trim(); // who
+      vars.triggerDesc  = (answers[3]  || '').trim(); // what about person
+      vars.feelings     = (answers[4]  || '').trim(); // feelings
+
+      vars.originalStory = (answers[11] || '').trim(); // story you tell
+      vars.whatYouWant   = (answers[18] || '').trim(); // what you want for YOU
+
+      vars.meVersion       = (answers[21] || '').trim(); // ME version
+      vars.oppositeVersion = (answers[23] || '').trim(); // Opposite version
+      vars.desiredVersion  = (answers[25] || '').trim(); // Desired version
+
+      // chosenVersion is answered in question "which version are you choosing?"
+      // In this list that is index 31.
+      vars.chosenVersion = (answers[31] || '').trim();
+    }
+
+    /***********************
+     * Render
+     ***********************/
     function renderQuestion() {
+      // Ensure current answer is captured before rendering (for live placeholder updates)
+      // Only if we already rendered at least once.
+      if (current >= 0 && current < answers.length) {
+        answers[current] = boxEl.value;
+      }
+
+      syncVarsFromAnswers();
+
       const q = fillTemplate(questions[current]);
+
       labelEl.textContent = `Q${current + 1}/${questions.length}: ${q}`;
-      boxEl.value = answers[current];
-      boxEl.focus();
+      boxEl.value = answers[current] || '';
       backBtn.disabled = current === 0;
       nextBtn.disabled = current === questions.length - 1;
+
+      progressEl.textContent = `Title: ${vars.stackTitle || '(not set yet)'}   |   Current: Q${current + 1}`;
+
+      // focus
+      setTimeout(() => boxEl.focus(), 0);
     }
 
-    function persistCurrentAnswer() {
+    function goNext() {
       answers[current] = boxEl.value;
-      syncVarsByIndex(current, boxEl.value);
+      syncVarsFromAnswers();
+      if (current < questions.length - 1) {
+        current++;
+        renderQuestion();
+      }
     }
 
-    nextBtn.addEventListener('click', () => {
-      persistCurrentAnswer();
-      if (current < questions.length - 1) current++;
-      renderQuestion();
-    });
+    function goBack() {
+      answers[current] = boxEl.value;
+      syncVarsFromAnswers();
+      if (current > 0) {
+        current--;
+        renderQuestion();
+      }
+    }
 
-    backBtn.addEventListener('click', () => {
-      persistCurrentAnswer();
-      if (current > 0) current--;
-      renderQuestion();
-    });
-
-    saveBtn.addEventListener('click', () => {
-      persistCurrentAnswer();
+    /***********************
+     * PDF Export (no blank cover page)
+     ***********************/
+    function savePDF() {
+      answers[current] = boxEl.value;
+      syncVarsFromAnswers();
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+      const doc = new jsPDF({ unit: 'pt', format: 'letter' }); // 612 x 792
 
-      const marginX = 48;
-      const pageBottom = 760;
-      const contentWidth = 520;
-      const lineHeight = 16;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
 
-      const title = (vars.stackTitle || 'Untitled').trim();
-      const date = new Date().toISOString().split('T')[0];
+      const marginLeft = 54;
+      const marginRight = 54;
+      const topMargin = 54;
+      const bottomMargin = 54;
 
-      // Page 1 (cover)
-      let y = 64;
-      doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(22);
-      doc.text('Mega Stack', marginX, y);
-      y += 28;
+      const contentWidth = pageWidth - marginLeft - marginRight;
+
+      const lineHeight = 14;
+      const blockGap = 12;
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const safeStackTitle = (vars.stackTitle || 'Mega_Stack')
+        .replace(/[^\w\- ]+/g, '')
+        .trim()
+        .replace(/\s+/g, '_');
+
+      // Header on page 1
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(28);
+      doc.text('Mega Stack', marginLeft, topMargin);
 
       doc.setFontSize(12);
-      doc.text(`Title: ${title}`, marginX, y);
-      y += 18;
-      doc.text(`Date: ${date}`, marginX, y);
-      y += 18;
+      doc.text(`Title: ${vars.stackTitle || ''}   |   Date: ${dateStr}`, marginLeft, topMargin + 24);
 
-      if (vars.core4) {
-        doc.text(`CORE 4: ${vars.core4}`, marginX, y);
-        y += 18;
+      doc.setLineWidth(0.75);
+      doc.line(marginLeft, topMargin + 42, pageWidth - marginRight, topMargin + 42);
+
+      // Start Q/A right below header
+      let y = topMargin + 70;
+
+      function ensureSpace(neededHeight) {
+        if (y + neededHeight > pageHeight - bottomMargin) {
+          doc.addPage();
+          y = topMargin;
+        }
       }
-      if (vars.person) {
-        doc.text(`Person: ${vars.person}`, marginX, y);
-        y += 18;
-      }
 
-      doc.setDrawColor(0);
-      doc.line(marginX, y, marginX + contentWidth, y);
+      for (let i = 0; i < questions.length; i++) {
+        const qText = `${i + 1}. ${fillTemplate(questions[i])}`;
+        const aText = (answers[i] || '').toString().trim();
 
-      // Start Q&A on Page 2
-      doc.addPage();
-      y = 64;
-
-      questions.forEach((rawQ, i) => {
-        const filledQ = fillTemplate(rawQ);
-
-        doc.setFont('Helvetica', 'bold');
-        doc.setFontSize(12);
-        const qLines = doc.splitTextToSize(`${i + 1}. ${filledQ}`, contentWidth);
-        qLines.forEach(line => {
-          if (y > pageBottom) { doc.addPage(); y = 64; }
-          doc.text(line, marginX, y);
-          y += lineHeight;
-        });
-
-        y += 6;
-        doc.setFont('Helvetica', 'normal');
-        doc.setFontSize(11);
-        const aText = (answers[i] || '').toString();
+        const qLines = doc.splitTextToSize(qText, contentWidth);
         const aLines = doc.splitTextToSize(aText, contentWidth);
 
-        if (aLines.length === 0) aLines.push('');
+        const blockHeight =
+          (qLines.length * lineHeight) +
+          (Math.max(aLines.length, 1) * lineHeight) +
+          blockGap;
 
-        aLines.forEach(line => {
-          if (y > pageBottom) { doc.addPage(); y = 64; }
-          doc.text(line, marginX, y);
+        ensureSpace(blockHeight);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(qLines, marginLeft, y);
+        y += qLines.length * lineHeight;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(12);
+
+        if (aLines.length === 0) {
+          doc.text([''], marginLeft, y);
           y += lineHeight;
-        });
+        } else {
+          doc.text(aLines, marginLeft, y);
+          y += aLines.length * lineHeight;
+        }
 
-        y += 14;
-      });
+        y += blockGap;
+      }
 
-      const safeTitle = title.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 50) || 'Untitled';
-      doc.save(`mega_stack_${safeTitle}_${date}.pdf`);
-    });
+      doc.save(`mega_stack_${safeStackTitle}_${dateStr}.pdf`);
+    }
+
+    /***********************
+     * Events
+     ***********************/
+    nextBtn.addEventListener('click', goNext);
+    backBtn.addEventListener('click', goBack);
+    saveBtn.addEventListener('click', savePDF);
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      const isMac = navigator.platform.toUpperCase().includes('MAC');
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+
+      // Ctrl/Cmd + Enter => Next
+      if (ctrlOrCmd && e.key === 'Enter') {
         e.preventDefault();
-        nextBtn.click();
+        goNext();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowLeft') {
+
+      // Ctrl/Cmd + Left Arrow => Back
+      if (ctrlOrCmd && e.key === 'ArrowLeft') {
         e.preventDefault();
-        backBtn.click();
+        goBack();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+
+      // Ctrl/Cmd + S => Save PDF
+      if (ctrlOrCmd && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
-        saveBtn.click();
+        savePDF();
       }
     });
 
-    renderQuestion();
+    // Ensure first question renders even if DOMContentLoaded timing is weird
+    function boot() {
+      // Initialize box so renderQuestion() can safely capture current value
+      boxEl.value = '';
+      current = 0;
+      renderQuestion();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
   </script>
 </body>
 </html>
