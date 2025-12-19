@@ -195,7 +195,6 @@
      ***********************/
     function fillTemplate(raw) {
       if (!raw) return '';
-
       return raw
         .replace(/{{stackTitle}}/g, vars.stackTitle || '')
         .replace(/{{core4}}/g, vars.core4 || '')
@@ -215,11 +214,11 @@
      * (Indexes aligned to question list)
      ***********************/
     function syncVarsFromAnswers() {
-      vars.stackTitle   = (answers[0]  || '').trim(); // title
-      vars.core4        = (answers[1]  || '').trim(); // core4
-      vars.person       = (answers[2]  || '').trim(); // who
-      vars.triggerDesc  = (answers[3]  || '').trim(); // what about person
-      vars.feelings     = (answers[4]  || '').trim(); // feelings
+      vars.stackTitle   = (answers[0]  || '').trim();  // title
+      vars.core4        = (answers[1]  || '').trim();  // core4
+      vars.person       = (answers[2]  || '').trim();  // who
+      vars.triggerDesc  = (answers[3]  || '').trim();  // what about person
+      vars.feelings     = (answers[4]  || '').trim();  // feelings
 
       vars.originalStory = (answers[11] || '').trim(); // story you tell
       vars.whatYouWant   = (answers[18] || '').trim(); // what you want for YOU
@@ -228,8 +227,7 @@
       vars.oppositeVersion = (answers[23] || '').trim(); // Opposite version
       vars.desiredVersion  = (answers[25] || '').trim(); // Desired version
 
-      // chosenVersion is answered in question "which version are you choosing?"
-      // In this list that is index 31.
+      // chosenVersion is answered at index 31 ("which version are you choosing?")
       vars.chosenVersion = (answers[31] || '').trim();
     }
 
@@ -237,14 +235,7 @@
      * Render
      ***********************/
     function renderQuestion() {
-      // Ensure current answer is captured before rendering (for live placeholder updates)
-      // Only if we already rendered at least once.
-      if (current >= 0 && current < answers.length) {
-        answers[current] = boxEl.value;
-      }
-
       syncVarsFromAnswers();
-
       const q = fillTemplate(questions[current]);
 
       labelEl.textContent = `Q${current + 1}/${questions.length}: ${q}`;
@@ -253,8 +244,6 @@
       nextBtn.disabled = current === questions.length - 1;
 
       progressEl.textContent = `Title: ${vars.stackTitle || '(not set yet)'}   |   Current: Q${current + 1}`;
-
-      // focus
       setTimeout(() => boxEl.focus(), 0);
     }
 
@@ -278,6 +267,7 @@
 
     /***********************
      * PDF Export (no blank cover page)
+     * Fix: properly add pages + repeat header, so there is no empty page.
      ***********************/
     function savePDF() {
       answers[current] = boxEl.value;
@@ -305,23 +295,34 @@
         .trim()
         .replace(/\s+/g, '_');
 
-      // Header on page 1
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(28);
-      doc.text('Mega Stack', marginLeft, topMargin);
+      // Draw header and return the Y position where content should start
+      function drawHeader() {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(28);
+        doc.text('Mega Stack', marginLeft, topMargin);
 
-      doc.setFontSize(12);
-      doc.text(`Title: ${vars.stackTitle || ''}   |   Date: ${dateStr}`, marginLeft, topMargin + 24);
+        doc.setFontSize(12);
+        // Keep it simple and consistent with your screenshot
+        doc.text(`Title: ${vars.stackTitle || ''}`, marginLeft, topMargin + 24);
+        doc.text(`Date: ${dateStr}`, marginLeft, topMargin + 40);
+        doc.text(`CORE 4: ${vars.core4 || ''}`, marginLeft, topMargin + 56);
+        doc.text(`Person: ${vars.person || ''}`, marginLeft, topMargin + 72);
 
-      doc.setLineWidth(0.75);
-      doc.line(marginLeft, topMargin + 42, pageWidth - marginRight, topMargin + 42);
+        doc.setLineWidth(0.75);
+        doc.line(marginLeft, topMargin + 90, pageWidth - marginRight, topMargin + 90);
 
-      // Start Q/A right below header
-      let y = topMargin + 70;
+        return topMargin + 112; // first Q/A starts right below header
+      }
+
+      // Page 1 header
+      let y = drawHeader();
 
       function ensureSpace(neededHeight) {
-        if (y + neededHeight > pageHeight - bottomMargin) {
-        }
+        if (y + neededHeight <= pageHeight - bottomMargin) return;
+
+        // Start a new page and repeat header so content continues immediately
+        doc.addPage();
+        y = drawHeader();
       }
 
       for (let i = 0; i < questions.length; i++) {
@@ -331,9 +332,11 @@
         const qLines = doc.splitTextToSize(qText, contentWidth);
         const aLines = doc.splitTextToSize(aText, contentWidth);
 
+        const aLineCount = Math.max(aLines.length, 1);
+
         const blockHeight =
           (qLines.length * lineHeight) +
-          (Math.max(aLines.length, 1) * lineHeight) +
+          (aLineCount * lineHeight) +
           blockGap;
 
         ensureSpace(blockHeight);
@@ -391,9 +394,8 @@
       }
     });
 
-    // Ensure first question renders even if DOMContentLoaded timing is weird
+    // Boot
     function boot() {
-      // Initialize box so renderQuestion() can safely capture current value
       boxEl.value = '';
       current = 0;
       renderQuestion();
