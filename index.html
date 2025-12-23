@@ -127,7 +127,8 @@
       meVersion: '',
       oppositeVersion: '',
       desiredVersion: '',
-      chosenVersion: ''
+      chosenVersion: '',
+      lesson: '' // NEW
     };
 
     const questions = [
@@ -166,13 +167,15 @@
       'Why are you choosing this story?',
       'What triggered you about {{person}} was: {{triggerDesc}}. You said you wanted: {{whatYouWant}}. The story you chose is: {{chosenVersion}}. Why has this trigger been positive?',
       'What is the lesson you learned from this trigger?',
-      'How does that lesson apply to your BODY domain?',
-      'How does that lesson apply to your BEING domain?',
-      'How does that lesson apply to your BALANCE domain?',
-      'How does that lesson apply to your BUSINESS domain?',
+      // UPDATED: inject lesson into next questions
+      'How does the lesson "{{lesson}}" apply to your BODY domain?',
+      'How does the lesson "{{lesson}}" apply to your BEING domain?',
+      'How does the lesson "{{lesson}}" apply to your BALANCE domain?',
+      'How does the lesson "{{lesson}}" apply to your BUSINESS domain?',
       'What is the most significant insight/revelation you\'re leaving this stack with?',
       'Why do you feel that this insight/revelation is significant?',
-      'What best describes your current state of being?'
+      'What best describes your current state of being?',
+      'Based on your lesson or revelation, what is the one action that you will take that will move you forward?'
     ];
 
     /***********************
@@ -204,7 +207,8 @@
         .replace(/{{meVersion}}/g, vars.meVersion || '')
         .replace(/{{oppositeVersion}}/g, vars.oppositeVersion || '')
         .replace(/{{desiredVersion}}/g, vars.desiredVersion || '')
-        .replace(/{{chosenVersion}}/g, vars.chosenVersion || '');
+        .replace(/{{chosenVersion}}/g, vars.chosenVersion || '')
+        .replace(/{{lesson}}/g, vars.lesson || '[lesson]'); // NEW
     }
 
     /***********************
@@ -226,6 +230,9 @@
 
       // "Which version are you choosing?" is index 31
       vars.chosenVersion = (answers[31] || '').trim();
+
+      // Lesson question is index 34 in this list
+      vars.lesson = (answers[34] || '').trim(); // NEW
     }
 
     /***********************
