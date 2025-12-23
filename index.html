@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Mega Stack</title>
 
-  <!-- Favicon (simple black dot) -->
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <!-- jsPDF for PDF export -->
+  <!-- jsPDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <style>
     :root { --maxw: 980px; }
+
     body{
       font-family: Arial, sans-serif;
       background:#000;
@@ -21,79 +22,100 @@
       max-width: var(--maxw);
       margin:0 auto;
     }
+
     h1{
-      font-size: 56px;
-      margin: 0 0 18px 0;
-      letter-spacing: -0.5px;
+      font-size:56px;
+      margin:0;
+      letter-spacing:-0.5px;
     }
+
+    .powered-by{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:8px;
+      font-size:14px;
+      opacity:0.85;
+    }
+
+    .powered-by img{
+      height:20px;
+      width:auto;
+    }
+
     .divider{
       height:1px;
       background:#fff;
-      margin: 0 0 26px 0;
+      margin:20px 0 26px;
     }
 
-    #question-box{ margin-top: 10px; }
+    #question-box{ margin-top:10px; }
 
     #question-label{
-      font-weight: 700;
-      font-size: 18px;
+      font-weight:700;
+      font-size:18px;
+      margin-bottom:12px;
+      white-space:pre-wrap;
+      line-height:1.35;
       display:block;
-      margin: 0 0 12px 0;
-      line-height: 1.35;
-      white-space: pre-wrap;
     }
 
     #answer-box{
       width:100%;
-      min-height: 230px;
-      padding: 14px;
-      font-size: 16px;
-      border: 2px solid #fff;
-      outline: none;
-      resize: vertical;
-      box-sizing: border-box;
+      min-height:230px;
+      padding:14px;
+      font-size:16px;
+      border:2px solid #fff;
+      background:#000;
+      color:#fff;
+      resize:vertical;
+      box-sizing:border-box;
     }
 
     .guides{
-      margin-top: 14px;
-      font-size: 18px;
-      line-height: 1.45;
-      color:#333;
+      margin-top:14px;
+      font-size:14px;
+      line-height:1.45;
+      opacity:0.8;
     }
-    .guides b{ color:#000; }
 
-.nav-buttons button {
-  padding: 14px 28px;
-  font-size: 18px;
-  background: #ffffff;
-  color: #000000;
-  border: 2px solid #ffffff;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
+    .nav-buttons{
+      margin-top:20px;
+      display:flex;
+      gap:16px;
+    }
 
-.nav-buttons button:hover:not(:disabled) {
-  background: #eaeaea;
-  color: #000000;
-}
+    .nav-buttons button{
+      padding:14px 28px;
+      font-size:18px;
+      background:#fff;
+      color:#000;
+      border:2px solid #fff;
+      cursor:pointer;
+    }
 
-.nav-buttons button:disabled {
-  background: #ffffff;
-  color: #777777;
-  border-color: #777777;
-  cursor: not-allowed;
-  opacity: 1;
-}
+    .nav-buttons button:disabled{
+      opacity:0.4;
+      cursor:not-allowed;
+    }
 
     .subline{
-      font-size: 14px;
-      color:#555;
-      margin-top: 10px;
+      margin-top:14px;
+      font-size:13px;
+      opacity:0.6;
     }
   </style>
 </head>
+
 <body>
+
   <h1>Mega Stack</h1>
+
+  <div class="powered-by">
+    <span>powered by</span>
+    <img src="expansion.png" alt="Expansion">
+  </div>
+
   <div class="divider"></div>
 
   <div id="question-box">
@@ -101,22 +123,22 @@
     <textarea id="answer-box"></textarea>
 
     <div class="guides">
-      <b>Keyboard shortcuts:</b><br>
-      Ctrl / Cmd + Enter → Next question<br>
-      Ctrl / Cmd + ← → Previous question<br>
-      Ctrl / Cmd + S → Finish &amp; Save PDF
+      <b>Keyboard shortcuts</b><br>
+      Cmd / Ctrl + Enter → Next question<br>
+      Cmd / Ctrl + ← → Previous question<br>
+      Cmd / Ctrl + S → Finish & Save PDF
     </div>
 
     <div class="nav-buttons">
       <button id="back-btn">Back</button>
       <button id="next-btn">Next</button>
-      <button id="save-btn">Finish &amp; Save</button>
+      <button id="save-btn">Finish & Save</button>
     </div>
 
     <div class="subline" id="progress"></div>
   </div>
 
-  <script>
+<script>
     /***********************
      * Variables + Questions
      ***********************/
